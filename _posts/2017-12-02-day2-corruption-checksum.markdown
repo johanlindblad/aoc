@@ -2,10 +2,10 @@
 layout: post
 title:  "Day 2: Corruption Checksum"
 date:   2017-12-02 12:00:00 +0100
-categories: easy
+categories:
+tags: easy
 ---
-
-## Part 1
+# Part 1
 
 Today we are given a problem involving calculating a checksum. It just consists
 of finding the difference between the maximum and the minimum element in each

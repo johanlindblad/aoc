@@ -33,3 +33,5 @@ way I can think of. Either way, I will try to write up good explanations, mostly
 for my own sake but maybe it will be of interest to someone somewhere. Time will
 tell.
 
+The full project with unit tests (both inline and in separate files) is at [my
+Github](https://github.com/johanlindblad/aoc-2017).

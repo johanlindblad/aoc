@@ -2,10 +2,10 @@
 layout: post
 title:  "Day 1: Inverse Captcha"
 date:   2017-12-01 12:00:00 +0100
-categories: easy
+categories: 
+tags: easy
 ---
-
-## Part 1
+# Part 1
 
 For the first part today we are tasked with solving a captcha that essentially
 has us sum numbers which are equal to their neighbours. The only slight
