@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Day 16: Permutation promenade"
+title:  "Day 16: Permutation Promenade"
 date:   2017-12-16 12:00:00 +0100
 categories:
 tags: easy revisit
