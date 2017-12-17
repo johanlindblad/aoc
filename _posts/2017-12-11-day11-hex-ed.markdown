@@ -1,0 +1,94 @@
+---
+layout: post
+title:  "Day 11: Hex Ed"
+date:   2017-12-11 12:00:00 +0100
+categories:
+tags: easy
+---
+# Part 1
+Today we are walking in a hexadecimal grid, where we can walk north, south,
+north west, north east, south west and south east. After taking the prescribed
+steps the question is how many steps the shortest path to here consists of.
+
+My solution is as follows:
+
+{% highlight elixir %}
+defmodule Aoc.Day11.Part1 do
+  def solve(input) when is_binary(input) do
+    input |> preprocess |> walk |> distance
+  end
+  def preprocess(input) when is_binary(input), do: String.trim(input) |> String.split(",")
+  def walk(steps), do: steps |> Enum.map(&effect/1) |> Enum.reduce(&sum/2)
+ 
+  def effect("n"), do: {0, 2}
+  def effect("s"), do: {0, -2}
+  def effect("ne"), do: {1, 1}
+  def effect("se"), do: {1, -1}
+  def effect("sw"), do: {-1, -1}
+  def effect("nw"), do: {-1, 1}
+
+  def distance({x, y}) when x < 0 or y < 0, do: distance({abs(x), abs(y)})
+  def distance({0, y}), do: div(y, 2)
+  def distance({x, y}) when y <= x, do: x
+  def distance({x, y}), do: div(x+y, 2)
+
+  def sum({a, b}, {c, d}), do: {a + c, b + d}
+end
+{% endhighlight %}
+
+Once again I found that pattern matching allowed me to write quite nice code.
+
+I found out afterwards that there are a few different ways to work with hex
+grids but that my way (which I came up with on my own) is one of them (although
+not the simplest one).
+
+Essentially you can see the alternating rows as a regular square grid where
+every other square can not be reached. If you start at `{0, 0}` you can walk
+north to `{0, 2}` or north-west to `{1, 1}` but there is no way to go to `{0,
+1}` or `{1, 0}`.
+
+My distance function is based on the following intution:
+
+* First, we use absolute values to make the rest of the expressions easier (the
+distance to `{x, y}` is the same as to `{-x, y}` or `{-x, -y}`.
+* Next, all paths to `{0, y}` take `y / 2` steps since we take 2 steps north or
+south with each such move (this clause is redundant with the one at the end but
+it helps make it clearer).
+
+These two intuitions are quite simple. The next is a bit trickier:
+* If we want to go to `{x, 0}` we require `x` steps, as we alternate north-east
+and south-east until we arrive.
+* If we want to go to `{x, 2}` we still require `x` steps, as a chain of
+north-east and south-east can be exchanged for two north-east steps. 
+* The same holds true for `{x, y}` for all y until `y > x` since otherwise we
+can just take more north-east steps than south-east steps.
+* For `y > x` we must first walk to `{x, x}` and then walk north until we end up
+where we want to go. The first part takes `x` steps, as described, and the
+second part takes `(y-x) / 2` steps (as described above). The sum of these two
+parts is `x + (y-x)/2`, or `2x/x + (y-x)/2`, or `(x+y)/2`.
+
+# Part 2
+Part 2 instead asks how far away we were at the furthest point. This is very
+similar to part 1 (we just need to keep track of the greatest distance so far).
+
+{% highlight elixir %}
+defmodule Aoc.Day11.Part2 do
+  alias Aoc.Day11.Part1
+
+  def solve(input), do: input |> Part1.preprocess |> max_distance
+
+  def max_distance(steps) do
+    steps
+    |> Enum.map(&Part1.effect/1)
+    |> Enum.reduce({0, {0, 0}}, fn(step, {max_d, coord}) ->
+      coord = Part1.sum(coord, step)
+      {max(max_d, Part1.distance(coord)), coord}
+    end)
+    |> elem(0)
+  end
+end
+{% endhighlight %}
+
+# Final thoughts
+This was a quite fun one. I am tempted to try it again with one of the other
+ways of doing hexadecimal coordinates.
