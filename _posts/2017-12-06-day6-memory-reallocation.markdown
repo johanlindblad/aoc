@@ -3,7 +3,7 @@ layout: post
 title:  "Day 6: Memory Reallocation"
 date:   2017-12-06 12:00:00 +0100
 categories:
-tags: easy
+tags: easy revisit
 ---
 # Part 1
 Today we are asked to reallocate memory banks. Essentially this boils down to

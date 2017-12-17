@@ -3,7 +3,7 @@ layout: post
 title:  "Day 5: A Maze of Twisty Trampolines, All Alike"
 date:   2017-12-05 12:00:00 +0100
 categories:
-tags: medium
+tags: medium revisit
 ---
 # Part 1
 Today we are asked to sort out interrupts from the CPU. Scaling back the layers

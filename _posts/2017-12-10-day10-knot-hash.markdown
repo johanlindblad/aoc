@@ -3,7 +3,7 @@ layout: post
 title:  "Day 10: Knot Hash"
 date:   2017-12-10 12:00:00 +0100
 categories:
-tags: medium
+tags: medium revisit
 ---
 # Part 1
 Today's challenge consists of calculating a hash. This is done by taking the

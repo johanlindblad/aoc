@@ -3,7 +3,7 @@ layout: post
 title:  "Day 11: Hex Ed"
 date:   2017-12-11 12:00:00 +0100
 categories:
-tags: easy
+tags: easy revisit
 ---
 # Part 1
 Today we are walking in a hexadecimal grid, where we can walk north, south,
