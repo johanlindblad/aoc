@@ -1,9 +1,9 @@
 ---
 layout: post
 title:  "Day 19: A Series of Tubes"
-date:   2017-12-18 12:00:00 +0100
+date:   2017-12-19 12:00:00 +0100
 categories:
-tags: medium revisit
+tags: medium
 ---
 # Part 1
 Today actually begins with a video:
@@ -104,7 +104,7 @@ from the rest of the state (which also contains the direction) and then use
 keep all the letters.
 
 # Part 2
-Today's part 2 was really simple (if you solved it right). For me the solution
+Today's part 2 was really simple (if you solved part 1 right). For me the solution
 consists of 1 line of actual code:
 
 {% highlight elixir %}
@@ -128,7 +128,9 @@ path taken.
 
 Left out from the part 1 code were the two functions `visualization_stream/2`
 and `filled_input/1` which provide two visualization over the coordinate stream.
-They can be found on (Github)[https://raw.githubusercontent.com/johanlindblad/aoc-2017/master/lib/aoc/day19/part1.ex]
+They can be found on [Github](https://raw.githubusercontent.com/johanlindblad/aoc-2017/master/lib/aoc/day19/part1.ex)
+
+They are:
 * `visualization_stream/1` plays the path through the pipes with a moving
 viewport. It can be run in `iex -S mix` with `Aoc.puzzle_input(19) |>
 Aoc.Day19.Part1.parse |> Aoc.Day19.Part1.visualization_stream |> Stream.run`
