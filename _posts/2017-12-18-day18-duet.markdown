@@ -1,0 +1,225 @@
+---
+layout: post
+title:  "Day 18: Duet"
+date:   2017-12-18 12:00:00 +0100
+categories:
+tags: hard
+---
+# Part 1
+This was a fun one which triggered memories from earlier years as well as the 
+[Synacor Challenge](https://challenge.synacor.com), both of which I have enjoyed thoroughly. 
+
+Essentially we are writing a virtual machine for a described instruction set. As
+I have done this a few times before this was not too tricky, but I played around
+a bit with how to do it best in a functional way.
+
+In the end the only thing I did which I would not do in an imperative language
+was that instead of having the program and a program counter, I have the program
+as a (linked) list and a "past program" list which contains instructions
+executed. When executing the next instruction, it is taken from the head of the
+program list and put at the head of the past program list.
+
+This means that instead of scanning from index `0` of the program list each time
+we just take the next instruction from the top. Also, the fact that the past
+program list is reversed means that it is quick to add to this list.
+
+Provided that we don't need absolute or very large relative jumps this should be
+a good solution.
+
+Anyway, the question wants us to execute the given program and observe the
+values it receives from the special sound register, which contains past sounds
+played with the `snd` instruction.
+
+The solution here is the updated one given the knowledge of part 2. It parses
+the instructions and runs the program, with `step/1` taking the next instruction
+and passing it to `step/2`, which pattern matches for the instruction type. This
+decouples the execution of the instructions from the instruction decoding and
+fetching step so that it was easy to run an instruction without it actually
+being in the program (this was useful in the initialization routine in part 2).
+
+Then I use this `step/1` function as the generator function for
+`Stream.iterate/1` to generate a lazily calculated stream of machine states.
+This made it really easy to step through and debug issues.
+
+Finally, the actual question is what is the first received value. To calculate
+this we simply filter the stream of machine states to ones where it was
+(conditionally) recovering values, checking that those conditions were met and
+then taking the first one in the queue.
+
+Here is the full code:
+
+{% highlight elixir %}
+defmodule Aoc.Day18.Part1 do
+  require Record
+
+  def preprocess(input), do: input |> String.trim |> String.split("\n") |> Enum.map(&preprocess_row/1)
+  def preprocess_row(row), do: row |> String.trim |> String.split(" ")
+
+  @initial_registers Enum.map(?a..?z, fn(_) -> 0 end)
+  Record.defrecord :machine, state: :running, registers: @initial_registers, send_queue: [], receive_queue: [], program: [], program_past: []
+
+  def received_values(simulation_stream) do
+    simulation_stream
+    |> Stream.filter(fn(m = machine(program: [[ins, opa | _] | _],)) ->
+      ins == "rcv" && value(m, opa) > 0
+    end)
+    |> Stream.map(&(machine(&1, :receive_queue) |> List.first))
+  end
+
+  def simulation_stream(instructions, transform \\ fn(machine) -> machine end) do
+    Stream.iterate(machine(program: instructions), &(transform.(&1) |> step))
+  end
+
+  def step(machine = machine(program: [instruction | rest], state: :running, program_past: past)) do
+    machine(machine, program_past: [instruction | past], program: rest)
+    |> step(instruction)
+  end
+  def step(machine = machine(program: [])), do: machine(machine, state: :halted)
+
+  def step(machine = machine(registers: registers), ["set", a, b]) do
+    registers = List.replace_at(registers, register_index(a), value(machine, b))
+    machine(machine, registers: registers)
+  end
+
+  def step(machine = machine(registers: registers), ["add", a, b]) do
+    registers = List.update_at(registers, register_index(a), &(&1 + value(machine, b)))
+    machine(machine, registers: registers)
+  end
+
+  def step(machine = machine(registers: registers), ["mul", a, b]) do
+    registers = List.update_at(registers, register_index(a), &(&1 * value(machine, b)))
+    machine(machine, registers: registers)
+  end
+
+  def step(machine = machine(registers: registers), ["mod", a, b]) do
+    registers = List.update_at(registers, register_index(a), &(rem(&1, value(machine, b))))
+    machine(machine, registers: registers)
+  end
+
+  def step(machine = machine(program: program, program_past: past), ["jgz", a, b]) do
+    case {value(machine, a), value(machine, b)} do
+      {iff, _} when iff <= 0 -> machine
+      {_, jump} when jump < 0 ->
+        {moved, rest} = Enum.split(past, 1 - jump)
+        machine(machine, program: Enum.reverse(moved) ++ program, program_past: rest)
+      {_, jump} when jump > 0 ->
+        {moved, rest} = Enum.split(program, jump - 1)
+        machine(machine, program: rest, program_past: Enum.reverse(moved) ++ past)
+    end
+  end
+
+  def step(machine = machine(send_queue: queue), ["snd", a]) do
+    machine(machine, send_queue: queue ++ [value(machine, a)])
+  end
+
+  def step(machine = machine(registers: registers, receive_queue: queue), ["rcv", a]) do
+    case value(machine, a) do
+      0 -> machine
+      _ -> 
+        [rcv | rest] = queue
+        registers = List.replace_at(registers, register_index(a), rcv)
+        machine(machine, receive_queue: rest, registers: registers)
+    end
+  end
+
+  def value(machine(registers: registers), spec = <<char>>) when char in ?a..?z, do: Enum.at(registers, register_index(spec))
+  def value(_machine, spec), do: spec |> String.to_integer
+
+  def register_index(<<register_name>>) when register_name in ?a..?z, do: register_name - ?a
+end
+{% endhighlight %}
+
+# Part 2
+In part 2 we are now running two of these machines at the same time and
+connecting their message passing streams together. They will eventually reach a
+deadlock state where both are waiting to receive values from each other.
+
+Once again I build a stream of machine states, which now consists of both of the
+machines. We run the first machine until it waits on an empty queue, run the
+second machine until it waits on an empty queue and then run them interleaved
+until we reach the deadlock state.
+
+Two of the `step/2` variants had to be rewritten due to the changed
+specification but otherwise part 2 is mostly part 1 with some glue code to run
+the two machines interleaved and sync their queues.
+
+We are asked for the number of sends from the second computer (zero-based
+indexing confused me at first). This is solved by `one_sends/1` which simply
+reduces over the stream of states and observes the send/receive queues.
+
+Here is the code:
+{% highlight elixir %}
+defmodule Aoc.Day18.Part2 do
+  import Aoc.Day18.Part1, only: [machine: 1, machine: 2, register_index: 1]
+  alias Aoc.Day18.Part1
+
+  def one_sends(simulation_stream) do
+    Stream.transform(simulation_stream, 0, fn
+      ({machine(receive_queue: []), _}, acc) -> {[], acc}
+      ({machine(receive_queue: queue), _}, acc) -> 
+        size = length(queue)
+        {[acc + size], acc + size}
+    end)
+    |> Enum.at(-1)
+  end
+
+  def simulation_stream(instructions) do
+    machine1 = machine(program: instructions)
+    machine2 = machine1 |> step(["set", "p", "1"])
+    initial = {machine1, machine2}
+
+    Stream.iterate(initial, &simulate/1)
+    |> Stream.take_while(
+      fn({machine(state: a), machine(state: b)}) ->
+        a == :running || b == :running
+    end)
+  end
+
+  def simulate({m1 = machine(state: :running), m2}), do: {step(m1), m2} |> sync_queues
+  def simulate({m1 = machine(state: :waiting), m2 = machine(state: :running)}), do: {m1, step(m2)} |> sync_queues
+  
+  def sync_queues({m1 = machine(send_queue: [s1 | st1]), m2 = machine(receive_queue: [], state: :waiting)}) do
+    sync_queues({
+      machine(m1, send_queue: []),
+      machine(m2, receive_queue: [s1 | st1], state: :running)
+    })
+  end
+  def sync_queues({m1 = machine(receive_queue: [], state: :waiting), m2 = machine(send_queue: [s2 | st2])}) do
+    sync_queues({
+      machine(m1, receive_queue: [s2 | st2], state: :running),
+      machine(m2, send_queue: [])
+    })
+  end
+  def sync_queues({m1, m2}), do: {m1, m2}
+
+  def step(machine = machine(program: [instruction | rest], state: :running, program_past: past)) do
+    machine(machine, program_past: [instruction | past], program: rest)
+    |> step(instruction)
+  end
+
+  # If the queue is empty, indicate that we are waiting for input
+  def step(machine = machine(receive_queue: [], program: program, program_past: [_ | rest]), ["rcv", a]) do
+    machine(machine, state: :waiting, program: [["rcv", a] | program], program_past: rest)
+  end
+  def step(machine = machine(registers: registers, receive_queue: [rcv | rest]), ["rcv", a]) do
+    registers = List.replace_at(registers, register_index(a), rcv)
+    machine(machine, receive_queue: rest, registers: registers)
+  end
+
+  defdelegate step(machine, ins), to: Part1
+end
+{% endhighlight %}
+
+# Final thoughts
+Once again I wrote a `Stream`-based solution which, once again, really was of use.
+It is great to be able to inspect every step of the process and once the
+simulation stream was set up it was simple to map over it to extract the
+information needed.
+
+I also used the `Record` module once again to label tuples and get convenience
+in both pattern matching and getting/setting values. It is a good way of passing
+related data around without having to remember if a specific variable is in the
+sixth or seventh position.
+
+Overall I am happy with the solution and although I might revisit it later for
+fun I am not unhappy with any parts of it.
