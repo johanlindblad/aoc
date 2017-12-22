@@ -55,7 +55,7 @@ defmodule Aoc.Day22.Part1 do
 
   def starting_position(width), do: {div(width-1, 2), div(width-1, 2)}
 end
-{% raw %}{% endhighlight %}
+{% endraw %}{% endhighlight %}
 
 There's nothing too complicated. I chose to use the `{x,y}`-tuple-keyed map once
 again, which worked well; because the grid can be seen as growing as it is being
