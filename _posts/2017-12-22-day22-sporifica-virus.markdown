@@ -12,7 +12,7 @@ visit an infected cell we turn left and otherwise we turn right.
 
 The code is as follows:
 
-{% highlight elixir %}
+{% highlight elixir %}{% raw %}
 defmodule Aoc.Day22.Part1 do
   def solve(input, steps) do
     input |> parse |> walk_stream |> Enum.at(steps) |> elem(3)
@@ -55,7 +55,7 @@ defmodule Aoc.Day22.Part1 do
 
   def starting_position(width), do: {div(width-1, 2), div(width-1, 2)}
 end
-{% endhighlight %}
+{% raw %}{% endhighlight %}
 
 There's nothing too complicated. I chose to use the `{x,y}`-tuple-keyed map once
 again, which worked well; because the grid can be seen as growing as it is being
@@ -71,7 +71,7 @@ In part 2 the rules are slightly more complicated; the cells are in one of 4
 states and the virus cycles between them. Depending on which state a cell is in
 we update our direction in one of the four possible ways.
 
-{% highlight elixir %}
+{% highlight elixir %}{% raw %}
 defmodule Aoc.Day22.Part2 do
   @states [:clean, :weakened, :infected, :flagged, :clean]
 
@@ -120,7 +120,7 @@ defmodule Aoc.Day22.Part2 do
     Enum.at(@states, i)
   end
 end
-{% endhighlight %}
+{% endraw %}{% endhighlight %}
 
 # Final thoughts
 I quite liked this one. It was not as difficult as the previous days but still
