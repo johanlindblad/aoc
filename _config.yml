@@ -16,11 +16,12 @@
 title: Adventures of Code
 email: johanlindblad@gmail.com
 description: >- # this means to ignore newlines until "baseurl:"
-  Just my Elixir solutions for AoC 2017. 
+  Just my Elixir solutions for AoC 2017.
 baseurl: "/aoc" # the subpath of your site, e.g. /blog
 url: "https://johanlindblad.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 # twitter_username: jekyllrb
 github_username:  johanlindblad
+google_analytics: UA-111939846-1
 
 # Build settings
 markdown: kramdown
